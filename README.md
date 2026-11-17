@@ -33,3 +33,4 @@ LSM6DSV320X dedicated High-G accelerometer and transmits its readings. The app
 cannot configure that sensor channel over BLE.
 # app1
 # app1
+# app1
