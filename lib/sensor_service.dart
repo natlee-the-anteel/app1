@@ -31,13 +31,16 @@ class IMUData {
 
   /// Parses a BLE notification. The BLE firmware sends `ax,ay,az,gx,gy,gz`
   /// with acceleration in m/s² and gyroscope in degrees/second, so the
-  /// gyroscope values are converted to radians/second here.
+  /// gyroscope values are converted to radians/second here. It may append
+  /// `hax,hay,haz`: the High-G accelerometer in g.
   static IMUData? tryParseEsp32BleCsv(String input) {
     final parts = input.trim().split(',');
     if (parts.length >= 6) {
-      final values = parts.take(6).map((p) => double.tryParse(p.trim())).toList();
-      if (values.every((value) => value != null && value.isFinite)) {
+      final values = parts.take(9).map((p) => double.tryParse(p.trim())).toList();
+      bool valid(double? value) => value != null && value.isFinite;
+      if (values.take(6).every(valid)) {
         const degreesToRadians = pi / 180;
+        final hasHighG = values.length == 9 && values.skip(6).every(valid);
         return IMUData(
           ax: values[0]!,
           ay: values[1]!,
@@ -45,6 +48,9 @@ class IMUData {
           gx: values[3]! * degreesToRadians,
           gy: values[4]! * degreesToRadians,
           gz: values[5]! * degreesToRadians,
+          hax: hasHighG ? values[6] : null,
+          hay: hasHighG ? values[7] : null,
+          haz: hasHighG ? values[8] : null,
         );
       }
     }
@@ -408,8 +414,14 @@ class BleSensorService implements SensorService {
       _setStatus('Scanning for the ESP32...');
       final found = Completer<BluetoothDevice>();
       final scanSub = FlutterBluePlus.onScanResults.listen((results) {
-        if (results.isNotEmpty && !found.isCompleted) {
-          found.complete(results.first.device);
+        if (found.isCompleted) return;
+        // Check the advertised services here too: the Windows plugin ignores
+        // the withServices filter and reports every nearby device.
+        for (final result in results) {
+          if (result.advertisementData.serviceUuids.contains(serviceUuid)) {
+            found.complete(result.device);
+            return;
+          }
         }
       });
       _subscriptions.add(scanSub);

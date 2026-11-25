@@ -10,11 +10,17 @@ The BLE connection scans for service
 comma-separated record in this order:
 
 ```text
-ax,ay,az,gx,gy,gz
+ax,ay,az,gx,gy,gz[,hax,hay,haz]
 ```
 
 Acceleration is displayed in m/s². Gyroscope values from the sketch are
 transmitted in degrees/second and converted to radians/second for display.
+The optional last three values are the High-G accelerometer in g; without
+them the High-G graph stays empty.
+
+The ESP32 sketch that sends this format is
+[`firmware/esp_imu/esp_imu.ino`](firmware/esp_imu/esp_imu.ino). Open it in
+Arduino IDE with the Espressif esp32 boards package installed.
 The BLE package is configured for its personal, nonprofit, or educational
 license tier; commercial use requires the package's commercial license.
 
@@ -27,10 +33,9 @@ within each newline-terminated serial record. For example:
 LowG [g] X:0.01 Y:0.02 Z:0.99 | HighG [g] X:12.5 Y:-30.0 Z:280.0 | Gyro [dps] X:0.3 Y:-0.4 Z:-0.1
 ```
 
-The current BLE firmware only sends six Low-G/gyroscope CSV values, so the
-High-G graph remains empty until the ESP32 firmware initializes and reads the
-LSM6DSV320X dedicated High-G accelerometer and transmits its readings. The app
-cannot configure that sensor channel over BLE.
+Over BLE, High-G values arrive as the optional last three CSV fields described
+above. The ESP32 firmware must initialize and read the LSM6DSV320X dedicated
+High-G accelerometer; the app cannot configure that sensor channel over BLE.
 # app1
 # app1
 # app1

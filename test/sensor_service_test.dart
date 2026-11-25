@@ -29,6 +29,25 @@ void main() {
     expect(reading.gz, closeTo(pi / 4, 1e-8));
   });
 
+  test('parses optional HighG values in g from ESP32 BLE CSV', () {
+    final reading = IMUData.tryParseEsp32BleCsv(
+      '0.10,0.20,9.81,1.0,2.0,3.0,12.50,-30.00,280.00',
+    );
+
+    expect(reading, isNotNull);
+    expect(reading!.az, 9.81);
+    expect(reading.hax, 12.5);
+    expect(reading.hay, -30.0);
+    expect(reading.haz, 280.0);
+  });
+
+  test('leaves HighG empty for 6-value ESP32 BLE CSV', () {
+    final reading = IMUData.tryParseEsp32BleCsv('0.10,0.20,9.81,1.0,2.0,3.0');
+
+    expect(reading, isNotNull);
+    expect(reading!.hax, isNull);
+  });
+
   test('rejects invalid ESP32 BLE CSV', () {
     expect(IMUData.tryParseEsp32BleCsv('1,2,3,4,invalid,6'), isNull);
   });
